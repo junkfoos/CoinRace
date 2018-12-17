@@ -11,7 +11,7 @@ function Hero(game, x, y) {
     this.animations.add('jump', [3]);
     this.animations.add('fall', [4]);
 }
-
+var t;
 // inherit from Phaser.Sprite
 Hero.prototype = Object.create(Phaser.Sprite.prototype);
 Hero.prototype.constructor = Hero;
@@ -28,9 +28,10 @@ Hero.prototype.move = function (direction) {
         this.scale.x = 1;
     }
 };
-
+Hero.prototype.lives = 2;
+    
 Hero.prototype.jump = function () {
-    const JUMP_SPEED = 650;
+    const JUMP_SPEED = 650; 
     let canJump = this.body.touching.down;
 
     if (canJump) {
@@ -160,6 +161,7 @@ PlayState.preload = function () {
     this.game.load.image('invisible-wall', 'images/invisible_wall.png');
     this.game.load.image('icon:coin', 'images/coin_icon.png');
     this.game.load.image('key', 'images/key.png');
+    this.game.load.image('icon:heart', 'images/heart.png');
 
     this.game.load.spritesheet('coin', 'images/coin_animated.png', 22, 22);
     this.game.load.spritesheet('spider', 'images/spider.png', 42, 32);
@@ -173,7 +175,7 @@ PlayState.preload = function () {
     this.game.load.audio('sfx:key', 'audio/key.wav');
     this.game.load.audio('sfx:door', 'audio/door.wav');
 };
-
+var lives = 2;
 PlayState.create = function () {
     // create sound entities
     this.sfx = {
@@ -201,6 +203,7 @@ PlayState.update = function () {
 };
 
 PlayState._handleCollisions = function () {
+
     this.game.physics.arcade.collide(this.spiders, this.platforms);
     this.game.physics.arcade.collide(this.spiders, this.enemyWalls);
     this.game.physics.arcade.collide(this.hero, this.platforms);
@@ -231,6 +234,7 @@ PlayState._handleInput = function () {
 };
 
 PlayState._loadLevel = function (data) {
+    clock();
     // create all the groups/layers that we need
     this.bgDecoration = this.game.add.group();
     this.platforms = this.game.add.group();
@@ -238,7 +242,7 @@ PlayState._loadLevel = function (data) {
     this.spiders = this.game.add.group();
     this.enemyWalls = this.game.add.group();
     this.enemyWalls.visible = false;
-
+    
     // spawn all platforms
     data.platforms.forEach(this._spawnPlatform, this);
     // spawn hero and enemies
@@ -333,9 +337,28 @@ PlayState._onHeroVsEnemy = function (hero, enemy) {
         enemy.die();
         this.sfx.stomp.play();
     }
-    else { // game over -> restart the game
+    else if (lives >1 ){
+        hero.body.position.x= 0;
+        hero.body.position.y= 0;
+        lives -= 1;
+        this.livesCount3.visible = false;
         this.sfx.stomp.play();
-        this.game.state.restart(true, false, {level: this.level});
+    }
+    else if(lives > 0) {
+         hero.body.position.x= 0;
+        hero.body.position.y= 0;
+        lives -= 1;
+        this.livesCount2.visible = false;
+        this.sfx.stomp.play();
+    }
+    else if (lives == 0){
+        this.livesCount.visible= false;
+        this.game.state.restart(true, false, {level:this.level00})
+        lives=2;
+        clearInterval(t);
+        console.log(timer);
+        sec = timer/1000
+        alert("GAME OVER "+ sec); 
     }
 };
 
@@ -354,10 +377,20 @@ PlayState._createHud = function () {
     const NUMBERS_STR = '0123456789X ';
     this.coinFont = this.game.add.retroFont('font:numbers', 20, 26,
         NUMBERS_STR);
-
+  
+    
     this.keyIcon = this.game.make.image(0, 19, 'icon:key');
     this.keyIcon.anchor.set(0, 0.5);
-
+    
+    
+   this.livesCount = this.game.make.image(170, 77, 'icon:heart');
+   this.livesCount2 = this.game.make.image(210, 77, 'icon:heart');
+   this.livesCount3 = this.game.make.image(250, 77, 'icon:heart');
+        this.livesCount.anchor.set(1,2) ;
+        this.livesCount2.anchor.set(1,2) ;
+        this.livesCount3.anchor.set(1,2) ;
+        
+    
     let coinIcon = this.game.make.image(this.keyIcon.width + 7, 0, 'icon:coin');
     let coinScoreImg = this.game.make.image(coinIcon.x + coinIcon.width,
         coinIcon.height / 2, this.coinFont);
@@ -367,9 +400,21 @@ PlayState._createHud = function () {
     this.hud.add(coinIcon);
     this.hud.add(coinScoreImg);
     this.hud.add(this.keyIcon);
+    this.hud.add(this.livesCount);
+    this.hud.add(this.livesCount2);
+    this.hud.add(this.livesCount3);
     this.hud.position.set(10, 10);
 };
-
+//timer
+var timer = 0;
+function clock()
+{
+     t = setInterval(function()
+        {
+                    timer++    
+                        
+                        },1)
+}
 // =============================================================================
 // entry point
 // =============================================================================
